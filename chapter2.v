@@ -498,24 +498,63 @@ Inductive bin : Type :=
   | OneMoreTwice : bin -> bin.
 
 
+Definition normalizing(n : bin) :=
+  match n with
+       | Zero => Zero
+       | another => Twice another
+  end.
+
+
+
 (* *)
 Fixpoint normalize(n : bin) :=
    match n with
    | Twice other => 
+       normalizing(normalize(other))
+       (*
        match normalize(other) with
        | Zero => Zero
        | another => Twice another
-       end
+       end*)
    | Zero => Zero
    | OneMoreTwice n' =>
       OneMoreTwice (normalize n')
    end.
 
+Lemma normalizing_norm : forall b : bin,
+   normalizing (normalize b) = normalize (Twice  b).
+Proof.
+   intros b.
+   induction b.
+   {
+     simpl.
+     reflexivity.
+   }
+   {
+     simpl.
+     reflexivity.
+   }
+   {
+      simpl.
+      reflexivity.
+   }
+Qed.
+
+Lemma normalizing_norm_reverse : forall b : bin,
+    normalize (normalizing b) = normalize (Twice  b).
+Proof.
+   intros b.
+   induction b.
+   - reflexivity.
+   - simpl. reflexivity.
+   - reflexivity.
+Qed.
+
 
 Fixpoint incr (number : bin) : bin :=
    match number with
    | Zero => OneMoreTwice Zero
-   | Twice t => OneMoreTwice (normalize t)
+   | Twice t => OneMoreTwice t
    | OneMoreTwice t => Twice (incr t)
 end.
 
@@ -525,6 +564,8 @@ Fixpoint bin_to_nat(x : bin) : nat :=
    | OneMoreTwice t' => 1 + 2*(bin_to_nat(t'))
    | Twice b' =>  2 * (bin_to_nat(b'))
 end.
+
+
 
 
 Lemma plus_zero: forall x : nat, x + 0 = x.
@@ -541,7 +582,7 @@ Proof.
   intros b.
   induction b .
   {  simpl. reflexivity. }
-  { simpl. rewrite plus_zero. reflexivity. }
+  { simpl. rewrite plus_zero. simpl. reflexivity. }
   {  
      simpl.
      rewrite plus_zero.
@@ -601,18 +642,53 @@ Compute bin_to_nat(bin_plus (nat_to_bin 3) (nat_to_bin 4)).
 Compute (bin_plus Zero Zero).
 Compute (bin_plus (Twice Zero) (Twice (Twice Zero))).
 
+(*
+Lemma idem_norm_2 : forall b : bin,
+       normalize (Twice b) = normalize (Twice (normalize b)).
+Proof.
+   intros b.
+   induction b.
+   {
+     simpl.
+     reflexivity.
+   }
+   { 
+    
+      simpl.
+      rewrite  normalizing_norm_reverse.
+      rewrite <- IHb.
+      rewrite  normalizing_norm.
+      reflexivity.
+    }
+    {
+      simpl. 
+    }
+Abort.
+*)
 
-Lemma push_normalize: forall b : bin,
+
+Lemma normalize_idem: forall b : bin,
     normalize( b) = normalize((normalize b)).
 Proof.
    intros b.
    induction b as [|b' IHb'|].
    { simpl. reflexivity. }
    {
-      
+     simpl.
+     rewrite  normalizing_norm_reverse .
+     rewrite  normalizing_norm .
+     simpl.
+     rewrite <- IHb'.
+     reflexivity.
+   }
+   {
       simpl.
-
-Abort.
+      rewrite <- IHb.
+      reflexivity.
+   }
+   
+     
+Qed.
 
 
 Definition double_bin (n : bin)  : bin :=
@@ -663,7 +739,6 @@ Proof.
    }
 Qed.
 
-
 Lemma idem_norm : forall b : bin,
     normalize(b) = normalize(normalize b).
 Proof.
@@ -674,15 +749,13 @@ Proof.
       reflexivity.
    }
    {
-    
       simpl.
-
    }
 Abort.
 
 
 Compute (nat_to_bin(bin_to_nat  (Twice Zero))).
-
+(*
 Theorem nat_to_bin_plus_reverse : forall b : bin, 
     (nat_to_bin((bin_to_nat  b) + (bin_to_nat  b))) = 
     (bin_plus b b).
@@ -696,9 +769,11 @@ Proof.
    {
       simpl.
       rewrite plus_zero.
-
    }
-Qed.
+   {
+   }
+Abort.
+*)
 
 Compute (normalize (incr (OneMoreTwice (Twice (Twice Zero))))).
 Compute  (incr (normalize (OneMoreTwice (Twice (Twice Zero))))).
@@ -810,6 +885,291 @@ Proof.
    }
 Abort.
 
+Lemma replace_suc : forall n : nat, 
+       S (n + n) = n + S n.
+Proof.
+   intros n.
+   induction n.
+   { simpl. reflexivity. }
+   { simpl.
+     replace (S (S n)) with (1 + (S n)).
+     replace (n + (1 + (S n))) with (1 + (n + (S n))).
+     simpl.
+     reflexivity.
+     rewrite  plus_assoc.
+     rewrite  plus_assoc.
+     replace (n + 1) with (1 + n).
+     reflexivity.
+     rewrite plus_comm.
+     reflexivity.
+     simpl.
+     reflexivity.
+   }
+Qed.
+
+Lemma plus_one_nat_to_bin : forall n : nat,
+  nat_to_bin ( S (n + n)) = (OneMoreTwice (nat_to_bin n)).
+Proof.
+   intros n.
+   induction n.
+   {
+     simpl.
+     reflexivity.
+   }
+   {
+     simpl.
+     replace  (n + S n) with (S (n + n)).
+     rewrite IHn.
+     destruct (nat_to_bin n).
+     {
+        simpl.
+        reflexivity.
+     }
+     {
+        simpl.
+        reflexivity. 
+     }
+     {
+         simpl.
+         reflexivity.
+     }
+     {
+       simpl.
+       rewrite replace_suc.
+       reflexivity.
+}
+   }
+Qed.
+
+(*
+Lemma bin_plus_normalizing_relation : forall a  : bin,
+    (bin_plus a a) = (normalizing (normalize a)).
+Proof.
+   intros a.
+   induction a.
+   {
+      simpl.
+      reflexivity.
+   }
+   {  
+      simpl.
+      destruct a.
+      - simpl.
+ 
+Qed.
+*)
+(*
+Lemma bin_plus_zero1 : forall a  : bin,
+    (bin_plus a Zero) = (normalize a).
+Proof.
+   intros a.
+   induction a.
+   { simpl. reflexivity. }
+   { simpl. 
+     rewrite  IHa.
+     rewrite <- IHa.
+     simpl. 
+     destruct a.
+     - simpl. reflexivity.
+     -  simpl.
+ 
+*)
+
+
+Lemma incr_twice : forall b: bin,
+    (incr (Twice b)) = OneMoreTwice b.
+Proof.
+   intros b.
+   destruct b.
+   - simpl. reflexivity.
+   -  simpl. reflexivity.
+   - simpl. reflexivity.
+Qed.
+
+Lemma incr_bin_plus_relation1 : forall a : bin,
+     (incr a) = (bin_plus  (OneMoreTwice Zero) a).
+Proof.
+   destruct a.
+   - simpl. reflexivity.
+   - simpl. reflexivity. 
+   - simpl. reflexivity.
+Qed.
+
+Lemma incr_bin_plus_relation_omt1 : forall a b : bin,
+    (bin_plus  (OneMoreTwice a) b) = (incr (bin_plus (Twice a) b)) .
+Proof.
+   intros a b.
+   induction a.
+   - simpl. reflexivity.
+   -  simpl. reflexivity.
+   - simpl. reflexivity.
+Qed.
+
+Lemma bin_plus_twice : forall a b : bin,
+     (bin_plus  (Twice a) b) = (bin_plus a (bin_plus  a b)).
+Proof.
+   intros a b.
+   destruct a.
+   {
+      simpl.
+      reflexivity.
+   }
+   {
+      simpl.
+      reflexivity.
+   }
+   {
+     simpl.
+     reflexivity. 
+   }
+Qed.
+
+
+(*
+Lemma bin_plus_comm : forall a b : bin,
+   (bin_plus a b) = (bin_plus b a).
+Proof.
+   intros a b.
+   induction a.
+   {
+     simpl.
+   }
+
+Lemma bin_plus_assoc : forall a b c : bin,
+      (bin_plus a (bin_plus b c)) = (bin_plus (bin_plus a b) c).
+Proof.
+    intros a b c.
+    induction a.
+    {
+     simpl.
+     reflexivity.
+    }
+    {
+       rewrite bin_plus_twice.
+       rewrite bin_plus_twice.
+       rewrite  IHa.
+       simpl.
+       rewrite bin_plus_twice.
+       simpl.
+       rewrite   IHa.
+
+
+Lemma bin_plus_incr : forall a b : bin,
+    (bin_plus (incr a) b) = (incr (bin_plus a b)).
+Proof.
+   intros a b.
+   induction a.
+   { simpl. reflexivity. }
+   { simpl. reflexivity. }
+   {
+     simpl.
+     rewrite incr_bin_plus_relation1.
+rewrite IHa.
+
+(* POR AQUI *) 
+       rewrite incr_bin_plus_relation_omt1.
+       rewrite bin_plus_twice.
+       rewrite <- incr_bin_plus_relation_omt1.
+       rewrite  bin_plus_incr.
+       
+        simpl.
+       rewrite  incr_bin_plus_relation1.
+       rewrite <- incr_twice.
+       rewrite <- incr_twice.
+       simpl.
+
+       rewrite  <- incr_bin_plus_relation1.
+       simpl.
+       rewrite <- incr_twice.
+
+    
+   }
+
+Lemma double_nat_to_bin_reverse : forall b : nat,
+    (nat_to_bin(b + b)) = (bin_plus (nat_to_bin(b)) (nat_to_bin(b))).
+Proof.
+   intros n.
+   induction n. 
+   {
+      simpl.
+      reflexivity.
+   }
+   {
+     simpl.
+     rewrite <- replace_suc.
+     rewrite plus_one_nat_to_bin.
+     simpl.
+     destruct (nat_to_bin n).
+     - simpl. reflexivity.
+     - simpl.
+   }
+Abort.
+*)
+
+Lemma nomalizing_incr : forall b : bin,
+     (normalizing (incr b)) = (Twice (incr b)).
+Proof.
+   intros b.
+   destruct b.
+   - simpl. reflexivity.
+   - simpl. reflexivity.
+   - simpl. reflexivity.
+Qed.
+
+Lemma nat_to_bin_incr : forall n : nat,
+    (nat_to_bin (S n)) = incr (nat_to_bin n).
+Proof.
+   intros n.
+   simpl.
+   reflexivity.
+Qed.
+
+Lemma one_more_twice_double_incr : forall b : bin,
+    (incr (incr (OneMoreTwice b))) = (OneMoreTwice (incr b)).
+Proof.
+    intros b.
+    simpl.
+    reflexivity.
+Qed.
+
+Lemma nat_to_bin_one_more_twice : forall n : nat,
+    (nat_to_bin (n + S n)) = OneMoreTwice (nat_to_bin n).
+Proof.
+  intros n.
+  induction n.
+  {
+     simpl. reflexivity.
+  }
+  {
+     rewrite <- replace_suc.
+     rewrite nat_to_bin_incr.
+     rewrite nat_to_bin_incr.
+     simpl.
+     rewrite IHn.
+     simpl.
+     reflexivity.
+
+
+  }
+Qed.
+
+Lemma one_more_twice_nat_to_bin_2 : forall n : nat,
+   (OneMoreTwice (nat_to_bin n)) = incr (nat_to_bin (n + n)).
+Proof.
+   intros n.
+   induction n.
+   { 
+      simpl.
+      reflexivity.
+   }
+   {
+     simpl.
+     rewrite <- one_more_twice_double_incr .
+     rewrite nat_to_bin_one_more_twice .
+     reflexivity.
+   }
+
+Qed.
 
 Theorem nat_to_bin_reverse : forall b : bin, 
     (nat_to_bin(bin_to_nat  b)) = normalize(b).
@@ -824,15 +1184,26 @@ Proof.
     
      simpl.
      rewrite plus_zero.
-    
 
-(*
-      rewrite <- IHb.
+     rewrite <- IHb.
+     destruct (bin_to_nat b').
+     { simpl. reflexivity. }
+     { simpl.  
+       rewrite nomalizing_incr.
+       rewrite nat_to_bin_one_more_twice.
+       simpl.
+       reflexivity.
+     }
+   }
+   {
       simpl.
-      rewrite twice_double2.
-
-      simpl. *)
-
+      rewrite plus_zero.
+      rewrite <- IHb.
+      rewrite one_more_twice_nat_to_bin_2.
+      reflexivity.
    }
    
 Qed.
+
+
+Print nat_to_bin_reverse.
