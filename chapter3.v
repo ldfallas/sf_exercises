@@ -20,6 +20,17 @@ Notation "x :: l" := (cons x l)
 Notation "[ ]" := nil.
 Notation "[ x ; .. ; y ]" := (cons x .. (cons y nil) ..).
 
+Definition hd (default:nat) (l:natlist) : nat :=
+  match l with
+  | nil => default
+  | h :: t => h
+  end.
+
+Definition tl (l:natlist) : natlist :=
+  match l with
+  | nil => nil
+  | h :: t => t
+  end.
 
 Compute (pair 1 2).
 
@@ -743,3 +754,145 @@ Proof.
   rewrite rev_involutive.
   reflexivity.
 Qed.
+
+(* Taken from the book *)
+
+
+Inductive natoption : Type :=
+  | Some : nat -> natoption
+  | None : natoption.
+
+Definition hd_error (l : natlist) : natoption :=
+  match l with
+  | [] => None
+  | (fst::rest) => Some fst
+  end.
+
+Example test_hd_error1 : hd_error [] = None.
+Proof.
+  reflexivity.
+Qed.
+
+
+Example test_hd_error2 : hd_error [1] = Some 1.
+Proof.
+  reflexivity.
+Qed.
+
+
+Example test_hd_error3 : hd_error [5;6] = Some 5.
+Proof.
+  reflexivity.
+Qed.
+
+
+Definition option_elim (d : nat) (o : natoption) : nat :=
+  match o with
+  | Some n' => n'
+  | None => d
+  end.
+
+Theorem option_elim_hd : forall (l:natlist) (default:nat),
+  hd default l = option_elim default (hd_error l).
+Proof.
+  intros l default.
+  destruct l.
+  {
+    simpl.
+    reflexivity.
+  }
+  {
+    simpl.
+    reflexivity.
+  }
+  
+Qed.
+
+
+
+(****** Partial maps ***********)
+
+Inductive id : Type :=
+| Id : nat -> id.
+
+
+Definition beq_id (x1 x2 : id) :=
+  match x1, x2 with
+  | Id n1, Id n2 => beq_nat n1 n2
+  end.
+
+Lemma beq_nat_reflex : forall x, beq_nat x x = true.
+Proof.
+  intros x.
+  induction x.
+  - reflexivity.
+  - simpl. rewrite IHx. reflexivity.
+Qed.
+
+
+Theorem beq_id_refl : forall x, true = beq_id x x.
+Proof.
+  destruct x.
+  -  simpl. rewrite beq_nat_reflex. reflexivity.
+
+Qed.
+
+End NatList.
+
+Module PartialMap.
+Import NatList.
+(*Export NatList.*)
+
+Inductive partial_map : Type :=
+| empty : partial_map
+| record : id -> nat -> partial_map -> partial_map.
+
+Definition update (d : partial_map)
+           (x : id) (value : nat) : partial_map :=
+  record x value d.
+
+Compute (update empty (Id 1) 100).
+
+
+Fixpoint find (x : id) (d : partial_map) : natoption :=
+  match d with
+  | empty => None
+  | record y v d' =>  if beq_id x y
+                      then Some v
+                      else find x d'
+end.
+
+Compute (find (Id 1) (update empty (Id 1) 100)).
+Compute (find (Id 2) (update empty (Id 1) 100)).
+
+
+Theorem update_eq :
+  forall(d : partial_map) (x : id) (v: nat),
+    find x (update d x v) = Some v.
+Proof.
+  intros d x v.
+  simpl.
+  rewrite <- beq_id_refl.
+  reflexivity.
+Qed.
+
+Theorem update_neq :
+  forall(d : partial_map) (x y : id) (o: nat),
+    beq_id x y = false -> find x (update d y o) = find x d.
+Proof.
+  intros d x y o.
+  intros fr.
+  simpl.
+  rewrite fr.
+  reflexivity.
+Qed.
+
+Inductive baz : Type :=
+  | Baz1 : baz -> baz
+  | Baz2 : baz -> bool -> baz.
+
+(*Zero???Compute (Baz2 Baz1).*)
+
+End PartialMap.
+
+
