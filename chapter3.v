@@ -20,6 +20,8 @@ Notation "x :: l" := (cons x l)
 Notation "[ ]" := nil.
 Notation "[ x ; .. ; y ]" := (cons x .. (cons y nil) ..).
 
+Compute [1;2;3].
+
 Definition hd (default:nat) (l:natlist) : nat :=
   match l with
   | nil => default

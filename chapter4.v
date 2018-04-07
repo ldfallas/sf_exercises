@@ -1,5 +1,6 @@
 Module Poly.
 
+  
 
   Inductive list (X : Type) : Type :=
   | nil : list X
