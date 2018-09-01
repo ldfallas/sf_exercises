@@ -197,6 +197,34 @@ Fixpoint split { X Y : Type } (l : list (X*Y) )
 
   end.
 
+Fixpoint filter {X:Type} (test: X -> bool) (l:list X) : (list X) :=
+  match l with
+  | [] => []
+  | h :: t => if test h then  h :: (filter test t)
+               else filter test t
+  end.
+
+
+Definition negb (b:bool) : bool :=
+  match b with
+  | true => false
+  | false => true
+  end.
+
+Definition andb (b1:bool) (b2:bool) : bool :=
+  match b1 with
+  | true => b2
+  | false => false
+  end.
+
+
+Definition orb (b1:bool) (b2:bool) : bool :=
+  match b1 with
+  | true => true
+  | false => b2
+  end.
+
+
 
 
 End Common.

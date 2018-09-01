@@ -388,6 +388,165 @@ Compute square 2.
 
 (* destruct on compounds *)
 
+(*
+Theorem  combine_split : forall X Y (l : list (X * Y)) l1 l2,
+     split l = (l1, l2) ->
+    combine l1 l2 = l.
+Proof.
+  intros X Y l l1 l2.
+  intros P.
+
+  induction l.
+  {
+    simpl.
+    inversion P.
+    simpl.
+    reflexivity.
+  }
+  {
+    inversion P.
+
+    apply IHl.
+    rewrite <- H0.
+    rewrite <-   P in H0.
+  }
+  
+  
+
+  simpl in P.
+   
+Qed.
+ p
+ *)
+
+Theorem  combine_parts : forall X Y (l : list (X * Y)) l1 l2 (v : (X * Y)) (x1 : X) (y1 : Y),
+    (v :: l) = combine (x1 :: l1) (y1 :: l2) ->
+    (v :: l) = (x1 , y1) :: (combine l1 l2).
+Proof.
+  intros xt yt lt l1t l2t vt x1t y1t.
+  simpl.
+  intros H.
+  apply H.
+
+Qed.
+
+Theorem  combine_parts2 : forall X Y (l : list (X * Y)) l1 l2 (v : (X * Y)) (x1 : X) (y1 : Y),
+    (v :: l) = (x1 , y1) :: (combine l1 l2) ->
+    (v :: l) = combine (x1 :: l1) (y1 :: l2) .
+
+Proof.
+  intros xt yt lt l1t l2t vt x1t y1t.
+  simpl.
+  intros H.
+  apply H.
+
+Qed.
+
+
+
+Compute split [(1,2)].
+Compute split ([] : list(nat * nat)).
+Compute combine ([] : list(nat)) ([] : list( nat)).
+
+(*
+Lemma split_empty : forall X Y (l : list (X * Y)) o,
+    split l = ([], o) -> l = [].
+Proof.
+  intros X Y l o.
+  
+ 
+  induction l.
+ 
+  { reflexivity. }
+  { intros H. inversion H.
+    re
+  simpl.
+
+  
+
+  
+Qed.
+*)
+
+Definition left { X Y :Type } (t : (X*Y)) :=
+  match t with
+  | (x, _) => x
+  end.
+
+Definition right { X Y :Type } (t : (X*Y)) :=
+  match t with
+  | (_, x) => x
+  end.
+
+Lemma split_parts2 : forall X Y (l : list (X * Y)) l1 l2,
+    split l = (l1 ,l2) -> l2 = right (split l).
+Proof.
+  intros X Y l l1 l2 H .
+  rewrite H.
+
+  reflexivity.
+Qed.
+
+Lemma split_cons : forall X Y (l : list (X * Y))  (x : (X*Y)),
+    split (((left x), (right x)) :: l) = (((left x)::(left (split l))), ((right x)::(right (split l)))).
+Proof.
+  intros X Y l x.
+  simpl.
+
+  destruct (split l).
+  - simpl. reflexivity.
+Qed.
+
+
+Lemma split_parts : forall X Y (l : list (X * Y)) l1 l2,
+    split l = (l1 ,l2) -> l1 = left (split l).
+Proof.
+  intros X Y l l1 l2.
+  induction l.
+  {
+    simpl.
+    intros H.
+    inversion H.
+    reflexivity.
+  }
+  {
+    intros H.
+    rewrite H.
+    simpl.
+    reflexivity.
+  }  
+Qed.
+(*
+Theorem combine_uni : forall X Y (l : list (X * Y)) (x : X) (y : Y),
+    combine (left (split l)) (right (split l)) = l.
+Proof.
+  intros X Y l x y.
+  induction l.
+  { simpl.
+    reflexivity.
+  }
+  {
+    destruct  (x0 :: l).
+    - simpl. reflexivity.
+    - simpl.
+    unfold combine.
+    unfold right.
+    unfold left.
+     simpl.    
+  }
+  
+ *)
+
+Lemma pairs_left_right : forall X Y (x : (X*Y)),
+    x = (left x, right x).
+Proof.
+  intros X Y x.
+  destruct x.
+  - simpl. reflexivity.
+Qed.
+
+    
+
 Theorem  combine_split : forall X Y (l : list (X * Y)) l1 l2,
      split l = (l1, l2) ->
     combine l1 l2 = l.
@@ -395,20 +554,322 @@ Proof.
   intros X Y l l1 l2.
   generalize dependent l1.
   generalize dependent l2.
+
   induction l.
   {
-    intros l1 l2.
     simpl.
-    intros H3.
+    intros H H2 H3.
     inversion H3.
     simpl.
     reflexivity.
   }
   {
-    intros l1 l2.
+    intros l2 l1.
+    intros H.
+    assert(HRight : l2 = right (split (x::l))).
+    {
+      apply split_parts2  in H.
+      apply H.
+    }
+    assert(HLeft : l1 = left (split (x::l))).
+    {
+      apply split_parts  in H.
+      apply H.
+    }
+
+    rewrite HRight.
+    rewrite HLeft.
+
+    assert (HLR : x = ((left x),(right x))).
+    {
+      simpl.
+      destruct x.
+      - simpl. reflexivity.
+    }
+
+    rewrite HLR.
+    rewrite split_cons.
+
+    simpl.
+
+    rewrite IHl.
+    reflexivity.
 
 
+    rewrite <-  pairs_left_right.
+
+    reflexivity.
+
+    }
+Qed.
+
+Theorem i_f : forall ( f: bool -> bool) ( x  y: bool),
+    x = y -> f x = f y.
+Proof.
+  intros.
+  inversion H.
+  reflexivity.
+Qed.  
+
+Theorem bool_fn_applied_thrice :
+  forall(f : bool -> bool) ( b : bool ) ,
+  f( f ( f b)) = f b.
+Proof.
+  intros.
+
+  destruct b eqn:H1.
+  destruct (f true) eqn:H2.
+  rewrite H2.
+  rewrite H2.
+  reflexivity.
+  destruct (f false) eqn:H3.
+  rewrite H2.
+  reflexivity.
+  rewrite H3.
+  reflexivity.
+  destruct (f false) eqn:H4.
+  destruct (f true) eqn:H5.
+  rewrite H5.
+  reflexivity.
+  rewrite H4.
+  reflexivity.
+  rewrite H4.
+  rewrite H4.
+  reflexivity.
+Qed.
+
+Theorem beq_nat_sym : forall (n m : nat),
+    beq_nat n m = beq_nat m n.
+Proof.
+  induction n .
+  {
+    intros m.
+    induction m.
+    {
+      reflexivity.
+    }
+    {
+      simpl.
+      reflexivity.
+    }
+  }
+  {
+    intros m.
+    induction m.
+    {
+      simpl.
+      reflexivity.
+    }
+    {
+      simpl.
+      apply IHn.
+    }
+    
 
   }
 Qed.
+
+Theorem beq_nat_trans : forall n m p,
+    beq_nat n m = true ->
+    beq_nat m p = true ->
+    beq_nat n p = true.
+Proof.
+  intros n m p H H2.
+
+  rewrite beq_nat_sym in H.
+  assert (H3 : n = m).
+  apply beq_nat_true.
+  rewrite beq_nat_sym in H.
+  rewrite <- H.
+  reflexivity.
+  rewrite H3.
+  apply H2.
+Qed.
+
+Compute length [1;2;3].
+
+Definition split_combine_statement : Prop :=
+  forall X Y (l1 : list(X)) (l2 : list(Y)),
+     length l1 = length l2 ->
+     split (combine l1 l2) = (l1, l2).
+
+Theorem split_combine : split_combine_statement.
+Proof.
+  intros X Y .
+  induction l1.
+  {
+    intros l2.
+    simpl.
+    destruct l2.
+    - simpl. reflexivity.
+    - simpl. intros H2. inversion H2.   
+   }
+  {
+    intros l2.
+    intros H2.
+    simpl in H2.
+
+    destruct l2.
+    - simpl. inversion H2.
+    - simpl in H2. simpl. rewrite IHl1. reflexivity.
+      inversion H2.
+      reflexivity.
+
+  }
+  
+Qed.
+
+(*
+Lemma filter_append : forall (X : Type) (test : X -> bool)
+                             (x : X) (l lf l3 l4 : list X),
+    filter test (app l3 app([x] l4))  = x :: lf -> test x = true.
+Proof.
+Qed.
+*)
+
+Theorem filter_excercise : forall (X : Type) (test : X -> bool)
+                                  (x : X) (l lf : list X),
+    filter test l = x :: lf -> test x = true.
+Proof.
+  intros X test x l lf.
+
+
+  induction l.
+  {
+    simpl.
+
+    intros  H.
+    inversion H.
+  }
+  {
+    simpl.
+    intros H4.
+    assert ((test x0 = true) -> (x0 = x)).
+    intros H3.
+    rewrite H3 in H4.
+    inversion H4.
+    reflexivity.
+
+    destruct (test x0) eqn: HD.
+    {
+      simpl in  H.
+      inversion H4.
+      rewrite <- H1.
+      rewrite HD.
+      reflexivity.
+    }    
+    {
+
+      inversion H4.
+
+      apply IHl.
+      apply H1.
+    }
+  }
+    
+Qed.
+
+
+Theorem filter_excercise_2 : forall (X : Type) (test : X -> bool)
+                                  (x : X) (l lf : list X),
+    filter test l = x :: lf -> test x = true.
+Proof.
+  intros X test x l lf.
+
+
+  induction l.
+  {
+    simpl.
+
+    intros  H.
+    inversion H.
+  }
+  {
+    simpl.
+    intros H4.
+
+    destruct (test x0) eqn: HD.
+    {
+      inversion H4.
+      rewrite <- H0.
+      rewrite HD.
+      reflexivity.
+    }    
+    {
+      inversion H4.
+      apply IHl.
+      apply H0.
+    }
+  }
+    
+Qed.
+
+
+
+Fixpoint forallb  { X  :Type } (f : X -> bool) (l : list X) :=
+  match l with
+  | (x::r) => andb (f x) (forallb f r)
+  | _ => true
+  end.
+
+Compute (forallb oddb [1;2;3]).
+Compute (forallb oddb [11;23;3]).
+Compute (forallb negb [false;false]).
+
+Fixpoint existsb  { X  :Type } (f : X -> bool) (l : list X) :=
+  match l with
+  | (x::r) => orb (f x) (existsb f r)
+  | _ => false
+  end.
+
+Compute (existsb  (beq_nat 5)  [1;2;3]).
+Compute (existsb (andb true) [true;true;false]).
+Compute (existsb oddb [1;0;0;0;0;3] ).
+
+Definition existsb' { X  :Type } (f : X -> bool) (l : list X) :=
+  negb (forallb (fun k => negb (f k)) l). 
+
+
+Compute (existsb'  (beq_nat 5)  [1;2;3]).
+Compute (existsb' (andb true) [true;true;false]).
+Compute (existsb' oddb [1;0;0;0;0;3] ).
+
+Theorem existsb_existsb' : forall (X : Type) (l : list X) (f : X -> bool),
+    existsb' f l = existsb f l.
+Proof.
+  intros X l f.
+  induction l.
+  {
+    simpl.
+    unfold existsb'.
+    unfold forallb.
+    simpl.
+    reflexivity.    
+  }
+  {
+
+    unfold existsb'.
+(*    unfold existsb.*)
+    destruct (f x) eqn: H2.
+    { simpl.
+      rewrite H2.
+      simpl.
+      reflexivity.
+    }
+    {
+      simpl.
+      rewrite H2.
+      simpl.
+      unfold existsb' in IHl.
+      apply IHl.
+      
+    }
+    
+     
+  }
+  
+Qed.  
+
+
+
 
