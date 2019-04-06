@@ -5,6 +5,7 @@
 Require  Common.
 
 
+Import Common.Common.
 
 Example and_example : 3 + 4 = 7 /\ 2 * 2 = 4.
 Proof.
@@ -454,3 +455,560 @@ Proof.
   apply Hx.
   apply FA.
 Qed.
+
+
+Theorem dist_exists_or : forall (X:Type) (P Q : X -> Prop),
+    (exists x, P x \/ Q x) <-> (exists x, P x) \/ (exists x, Q x).
+Proof.
+  intros X P Q.
+  split.
+  intros [x1 [Hx1|Hx2]].
+  left.
+  exists x1.  
+  apply Hx1.
+
+  right.
+  exists x1.
+  apply Hx2.
+
+  intros  [[x H31]|[x H32]].
+  exists x.
+  left.
+
+  apply H31.
+
+  exists x.
+
+  right.
+
+  apply H32.
+Qed.
+
+
+Fixpoint In {A : Type} (x : A) (l : list A) : Prop :=
+  match l with
+  | [] => False
+  | x' :: l' => x' = x \/ In x l'
+  end.
+
+Example In_example_1 : In 4 [1;2;3;4;5].
+Proof.
+   simpl.
+   right.
+   right.
+   right.
+   left.
+   reflexivity.
+Qed.
+
+Example In_example_2 :
+  forall n, In n [2;4] -> exists n', n = 2 * n'.
+Proof.
+  simpl.
+  intros n.
+  intros [H1 | [H2|H3]].
+  exists 1. rewrite <- H1. simpl. reflexivity.
+  exists 2. simpl.  rewrite H2. reflexivity.
+  inversion H3.
+Qed.
+
+Lemma In_map :
+  forall(A B :Type) (f : A -> B) (l : list A) (x : A),
+    In x l ->
+    In (f x) (map f l).
+Proof.
+  intros A B f l x .
+  induction l as [].
+  - simpl. intros H. inversion H.
+  - simpl. intros [H1|H2]. left. rewrite H1. reflexivity.
+    right. apply IHl. apply H2.
+Qed.
+
+
+Lemma In_map_iff :
+  forall (A B : Type) (f : A -> B) (l : list A) (y : B),
+    In y (map f l)  <-> exists x, f x = y /\ In x l .
+Proof.
+  intros A B f l y.
+  split.
+  
+  induction l.
+  - simpl. intros H. inversion H.
+  - simpl. intros [H1|H2]. exists x. split. apply H1. left. reflexivity.
+    apply IHl in H2. 
+    destruct H2 as [x' [X1' X2']].
+    exists x'.
+    split.
+    apply X1'.
+    right.
+    apply X2'.
+  -
+    
+
+  
+    
+  intros [x [X1 X2]].
+  rewrite <- X1.
+  apply In_map.
+  apply X2.
+
+
+Qed.
+
+
+
+Lemma append_null : forall  A (l : list A) , 
+  l ++ [ ] = l.
+Proof.
+  intros A l.
+  induction l.
+  simpl.
+  reflexivity.
+  simpl.
+  rewrite IHl.
+  reflexivity.
+Qed.
+
+Lemma or_assoc : forall P K V:Prop,
+    (P \/ K) \/ V <-> P \/ (K \/ V).
+Proof.
+  intros P K V.
+  split.
+  intros [[H1|H2]|H3].
+  left.
+  apply H1.
+  right.
+  left.
+  apply H2.
+  right.
+  right.
+  apply H3.
+  intros [H1|[H2|H3]].
+  left.
+  left.
+  apply H1.
+  left.
+  right.
+  apply H2.
+  right.
+  
+  apply H3.  
+  
+Qed.  
+
+
+Require Import Coq.Setoids.Setoid.
+
+Lemma app_empty : forall (A : Type) (l : list A) ,
+    l ++ [] = l.
+Proof.
+  induction l.
+  simpl.
+  reflexivity.
+  simpl.
+  rewrite IHl.
+  reflexivity.
+Qed.
+
+Lemma in_app_if_1 : forall A l l' (a:A),
+    In a l -> In a (l ++ l').
+Proof.  
+  intros A l l' a.
+  intros H1.
+  induction l.  
+  simpl in H1.
+  inversion H1.
+
+  simpl.
+  simpl in H1.
+  destruct H1 as [H3|H4].
+  left.
+  apply H3.
+  right.
+  apply IHl.
+  apply H4.
+Qed.
+   
+Lemma in_app_iff : forall A l l' (a:A),
+  In a (l++l') <-> In a l \/ In a l'.
+Proof.
+  intros A l l' a.
+  split.
+  intros H.
+  induction l.
+  induction l'.
+
+  simpl in H.
+  inversion H.
+  simpl in H.
+  simpl.
+  right.
+  apply H.
+  simpl.
+  simpl in H.
+  destruct H.
+  left. left.
+  apply H.
+  simpl in H.
+  apply or_assoc.
+  right.
+  apply IHl.
+  apply H.
+
+
+  intros [H1|H2].
+  destruct l.
+  simpl in H1.
+  inversion H1.
+  simpl.
+  simpl in H1.
+  destruct H1.
+  left.
+  apply H.
+  right.
+  induction l.
+  simpl in H.
+  inversion H.
+  simpl.
+  simpl in H.
+  destruct H.
+  left.
+  apply H.
+  right.
+  apply IHl.
+  apply H.
+  induction l.
+  simpl.
+  apply H2.
+  simpl.
+  right.
+  apply IHl.
+Qed.
+
+
+Fixpoint All { T : Type } (P : T -> Prop) (l : list T) : Prop :=
+  match l with
+  | [] => True
+  | x' :: l' => (P x') /\ (All P l')
+  end.
+
+Compute (All (fun x => In x [1;2;3]) [3;2;1;1]).
+Compute All (fun x => In x [1;2;3]) [3;24;1;1].
+
+Lemma  All_In :
+  forall T (P : T -> Prop) (l : list T),
+    (forall x, In x l -> P x) <-> All P l.
+Proof.
+  intros T P l.
+  split.
+  intros H.
+  induction l.
+  simpl.
+  reflexivity.
+  simpl.
+  split.
+  apply H.
+  simpl.
+  left.
+  reflexivity.
+  apply IHl.
+  intros H3.
+  intros H4.
+  apply H.
+  simpl.
+  right.
+  apply H4.
+
+  intros H5.
+  intros x.
+  induction l.
+  simpl.
+  intros H6.
+  inversion H6.
+  simpl.
+  intros [H7|H8].
+  simpl in H5.
+  destruct H5.
+  rewrite <- H7.
+  apply H.
+  apply IHl.
+  simpl in H5.
+  destruct H5.
+  apply H0.
+
+  apply H8.
+Qed.
+
+
+Definition combine_odd_even (Podd Peven : nat -> Prop) :
+  nat -> Prop :=
+  (fun x => if (oddb x) then (Podd x) else (Peven x)).
+
+Check combine_odd_even.
+
+Theorem combine_odd_even_intro :
+  forall (Podd Peven : nat -> Prop) (n : nat),
+    (oddb n = true -> Podd n) ->
+    (oddb n = false -> Peven n) ->
+    combine_odd_even Podd Peven n.
+
+Proof.
+  intros Podd Peven n.
+  intros H1 H2.
+  induction n.
+  unfold combine_odd_even.
+  unfold oddb.           
+  simpl.              
+  apply H2.
+  unfold oddb.
+  unfold evenb.
+  simpl.
+  reflexivity.
+
+  unfold combine_odd_even.
+  destruct (S n) eqn: H4.
+  simpl.
+  apply H2.
+  unfold oddb.
+  simpl.
+  reflexivity.
+
+  destruct (oddb (S n0)).
+  apply H1.
+  reflexivity.
+  apply H2.
+  reflexivity.
+Qed.
+
+
+Theorem combine_odd_even_elim_odd :
+  forall (Podd Peven : nat -> Prop) (n : nat),
+    combine_odd_even Podd Peven n ->
+    oddb n = true ->
+    Podd n.
+Proof.
+  intros Podd Peven n  .
+  unfold combine_odd_even.
+  destruct (oddb n) eqn: H1.
+  intros H2 H3.
+  simpl in H3.
+  apply H2.
+  intros H3 H4.
+  inversion H4.
+Qed.
+
+Theorem combine_odd_even_elim_even :
+  forall (Podd  Peven : nat -> Prop) (n : nat),
+    combine_odd_even Podd Peven n ->
+       oddb n = false ->
+       Peven n.
+Proof.
+  intros Podd Peven n.
+  unfold combine_odd_even.
+  destruct (oddb n) eqn: H1.
+  intros H2 H3.
+  simpl in H3.
+  inversion H3.
+  intros H2 H3.
+  
+  apply H2.
+  
+  
+Qed.  
+
+
+Check combine_odd_even_elim_even.
+
+Lemma proj1 : forall P Q : Prop,
+    P /\ Q -> P.
+Proof.
+  intros  P Q [HP HQ].
+  apply HP.
+Qed.
+
+
+
+Example lemma_application_ex :
+  forall {n : nat} { ns : list nat },
+    In n (map (fun m => m * 0) ns) ->
+    n = 0.
+Proof.
+  intros n ns H.
+  destruct (proj1 _ _ (In_map_iff _ _ _ _ _) H)
+    as [m [Hm _]].
+  assert (H3 : m * 0 = 0).
+  induction m.
+  reflexivity.
+  simpl.
+  simpl in Hm.
+  apply IHm.
+  apply Hm.
+  rewrite <- Hm .
+  rewrite H3.
+  reflexivity.
+Qed.
+
+
+Fixpoint rev_append {X} (l1 l2 : list X) : list X :=
+  match l1 with
+  | [] => l2
+  | x :: l1' => rev_append l1' (x :: l2)
+  end.
+
+Check rev_append.
+
+Definition tr_rev {X} (l : list X) : list X :=
+  rev_append l [].
+
+
+Axiom function_extensionality : forall {X Y : Type}
+                                       {f g : X -> Y},
+    (forall (x:X), f x = g x) -> f = g.
+(*
+Lemma tr_rev_append : forall {X : Type} (x:X) (l : list X), tr_rev (x::l)  =  tr_rev l 
+
+ *)(*
+
+Lemma rev_append_prop : forall { X : Type } (x:X) (l : list X),
+    rev_append l [x] = rev_append (l ++ [x]) [].
+Proof.
+  intros X x l.
+  simpl.
+  induction l.
+  - simpl. reflexivity.
+  - simpl.
+    *)
+Lemma rev_append_append : forall { X : Type } (x:X) (l : list X) (l2 : list X),
+    rev_append l l2 = (rev_append l []) ++ l2.
+Proof.
+  induction l.
+  - simpl. reflexivity.
+  - simpl.  simpl. rewrite IHl.  intros l2. rewrite IHl. simpl. rewrite  <- app_assoc. simpl. reflexivity.
+Qed. 
+
+Lemma tr_rev_correct : forall X, @tr_rev X = @rev X.
+Proof.
+  intros X.
+  apply function_extensionality.
+  intros x.
+  induction x.
+  {  simpl.  unfold tr_rev. simpl. reflexivity. }
+  { simpl. unfold tr_rev. simpl. rewrite <- IHx. unfold tr_rev.
+    simpl. rewrite rev_append_append. reflexivity.  apply x. }
+
+Qed.
+
+Fixpoint double (n:nat) :=
+  match n with
+  | 0 => 0
+  | S n' => S (S (double n'))
+  end.
+
+         
+
+
+Theorem evenb_double : forall k, evenb( double k)  = true.
+Proof.
+  intros k. induction k as [|k' IHk'].
+  - reflexivity.
+  - simpl. apply IHk'.
+Qed.
+
+Theorem evenb_exist_double : forall n k,
+    (n = double k) -> (evenb n) = true.
+Proof.
+  intros n k.
+  intros H.
+  rewrite H.
+  apply evenb_double.
+Qed.
+
+
+Lemma doubleneg: forall b: bool, negb(negb(b)) = b.
+Proof.
+intros b.
+destruct b.
+- reflexivity.
+- reflexivity.
+Qed.
+
+
+
+Theorem evenb_S : forall n : nat,
+  evenb (S n) = negb (evenb n).
+Proof.
+intros n.
+induction n as [| n' IHn'].
+{ reflexivity. }
+{ rewrite -> IHn'. 
+   simpl.
+   rewrite doubleneg.
+   reflexivity.
+}
+Qed.
+
+Theorem evenb_double_conv : forall n,
+    exists k, n = if evenb n then double k
+                  else S (double k).
+Proof.
+ (* intros n.*)
+  induction n.
+  - simpl. exists 0. simpl. reflexivity.
+  -  rewrite evenb_S. destruct (evenb n). simpl. inversion IHn.  exists x.  rewrite H. reflexivity.
+     simpl.
+     inversion IHn.
+     rewrite  H.
+     exists (S x).
+     simpl.
+     induction x.
+     { simpl. reflexivity. }
+     { simpl. reflexivity. }
+
+Qed.
+
+Lemma andb_true_iff : forall b1 b2 : bool,
+    andb b1 b2 = true <-> b1 = true /\ b2 = true.
+Proof.
+    split.
+    intros H.
+    split.
+    unfold andb in H.
+    destruct b1 eqn: Hq.
+    reflexivity.
+    inversion H.
+    unfold andb in H.
+    destruct b1.
+    apply H.
+    inversion H.
+    intros [H2 H3].
+    rewrite H2.
+    rewrite H3.
+    simpl.
+    reflexivity.
+Qed.
+
+
+Lemma orb_true_iff : forall b1 b2,
+    orb b1 b2 = true <-> b1 = true \/ b2 = true.
+Proof.
+  intros b1 b2.
+  split.
+  unfold orb.
+  intros H1.
+  destruct b1.
+  left.
+  reflexivity.
+  right.
+  rewrite H1.
+  reflexivity.
+  intros [H22|H23].
+  rewrite H22.
+  simpl.
+  reflexivity.
+  rewrite H23.
+  destruct b1.
+  - reflexivity.
+  - simpl. reflexivity.
+Qed.
+
+
