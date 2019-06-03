@@ -1012,3 +1012,413 @@ Proof.
 Qed.
 
 
+Theorem diff_false : forall x : nat,
+    ~(~(x = x)).
+Proof.
+  unfold not.
+  intros x  H.
+  apply H.
+  trivial.
+Qed.
+
+
+Theorem beq_nat_true : forall n m,
+    beq_nat n m = true -> n = m.
+Proof.
+  intros n. (* m H.*)
+  induction n.
+  {
+    intros m H.
+    destruct m.
+    - reflexivity.
+    - inversion H.
+  }
+  { 
+    simpl.
+    destruct m.
+    {
+      simpl. 
+      intros H. 
+      inversion H.
+    }
+    {
+      simpl. 
+      intros H.
+      apply f_equal.
+
+      apply IHn.
+      apply H.
+
+    }
+
+  }
+Qed.
+
+Theorem beq_same : forall x : nat,
+    beq_nat x x = true.
+Proof.
+  intros x.
+  induction x.
+  - simpl. reflexivity.
+  - simpl. apply IHx.
+Qed.  
+
+Theorem beq_nat_false_iff : forall x y : nat,
+    beq_nat x y = false <-> x <> y.
+Proof.
+  intros x y.
+  unfold not.
+  split.
+  
+  intros H3.
+  intros H1.
+  rewrite H1 in H3.
+  rewrite  beq_same in H3. 
+  inversion H3.
+  intros H1.
+  destruct (beq_nat x y) eqn: Ht1.
+  apply beq_nat_true in Ht1.
+  destruct H1.
+  apply Ht1.
+  reflexivity.
+Qed.
+ 
+Theorem restricted_excluded_middle : forall P b,
+       (P <-> b = true) -> P \/ ~P.
+Proof.
+  intros P [] H.
+  - left. rewrite H. reflexivity.
+  - right. rewrite H. intros contra. inversion contra.
+Qed.
+
+       
+
+Fixpoint beq_list {A : Type} (beq : A -> A -> bool)
+         (l1 l2 : list A) : bool :=
+  match l1 with
+  | (X::Rest1) =>
+    match l2 with
+    | (Y::Rest2) => andb (beq X Y) (beq_list beq Rest1 Rest2)
+    | [] => false
+    end
+  | [] =>
+    match l2 with
+        | [] => true
+        | _ => false
+     end    
+  end.
+
+
+
+Fixpoint beq_list2 {A : Type} (beq : A -> A -> bool)
+         (l1 l2 : list A) : bool :=
+  match (l1,l2) with
+  | ((X::Rest1),(Y::Rest2)) 
+    => andb (beq X Y) (beq_list2 beq Rest1 Rest2)
+  | ([],[]) => true
+  | _ => false           
+  end.
+
+
+Compute beq_list beq_nat [1;2;3;4] [1;2;3;4].
+
+
+Compute beq_list beq_nat [1;2;3;4] [1;2;3].
+
+Compute beq_list beq_nat [1;2;3;4] [1;2;33;4].
+
+
+Lemma list_equality :
+  forall A (l1 l2 : list A),
+    l1 = l2 -> (l1 = [] /\ l2 = []) \/ (exists a l, l1 = (a::l) /\ l2 = (a::l)). 
+Proof.
+  intros A l1 l2 H.
+  induction l1.
+  induction l2.
+  left.
+  split.
+  reflexivity.
+  reflexivity.
+  inversion H.
+  right.  
+exists x.  
+exists l1.  
+split.
+reflexivity.
+rewrite H.
+reflexivity.
+Qed.
+
+Lemma list_equality2 :
+  forall A (l1 l2 : list A),
+     ((l1 = [] /\ l2 = []) \/ (exists a l, l1 = (a::l) /\ l2 = (a::l))) -> l1 = l2 . 
+Proof.
+  intros A l1 l2.
+  intros [[H1 H2]|H3].
+  rewrite H1. rewrite H2.
+  reflexivity.
+  destruct H3.
+  destruct H.
+  generalize dependent H.
+  intros [H5 H6].
+  rewrite H5.
+  rewrite H6.
+  reflexivity.
+Qed.
+
+(*
+Lemma list_bequality2 :
+  forall A (beq : A -> A -> bool)   (l1 l2 : list A),
+     ((l1 = [] /\ l2 = []) \/ (exists a l, (beq_list beq l1  (a::l) = true) /\ (beq_list beq l2  (a::l)) = true)) -> beq_list beq l1  l2 = true. 
+Proof.
+  
+Qed.
+ *)
+
+Lemma beq_ref :
+  forall A (beq : A -> A -> bool)  x, (forall a1 a2, beq a1 a2 = true <-> a1 = a2) ->
+              beq x x = true.
+Proof.
+  intros A beq x.
+  intros H.
+  apply H.
+  reflexivity.
+Qed.
+
+Lemma list_beqlist_ref :
+  forall A (beq : A -> A -> bool)   (l1  : list A),
+     (forall a1 a2, beq a1 a2 = true <-> a1 = a2) ->
+     beq_list beq l1 l1 = true .
+Proof.
+  intros A beq l1 H.
+  induction l1.
+  simpl.
+  reflexivity.
+  simpl.
+  rewrite beq_ref.
+  simpl.
+  apply IHl1.
+  apply H.
+Qed.
+
+
+  
+Lemma list_bequality2_1 :
+  forall A (beq : A -> A -> bool)   (l1 l2 : list A),
+     (forall a1 a2, beq a1 a2 = true <-> a1 = a2) ->
+     beq_list beq l1  l2 = true -> ((l1 = [] /\ l2 = []) \/ (exists a l, (beq_list beq l1  (a::l) = true) /\ (beq_list beq l2  (a::l)) = true)). 
+Proof.
+  intros A beq l1 l2 Hb.
+  induction l1.
+  induction l2.
+  simpl.
+  left.
+  split.
+  reflexivity.
+  reflexivity.
+  simpl.
+  intros H.
+  inversion H.
+  simpl.
+  destruct l2.
+  intros HC.
+  inversion HC.
+  intros HK.
+  right.
+  exists a.
+  exists l2.
+  split.
+  apply HK.
+  simpl.
+  rewrite beq_ref.
+  simpl.
+  apply list_beqlist_ref.
+  apply Hb.
+    apply Hb.
+Qed.
+
+
+
+Lemma empty_beq :
+    forall A (beq : A -> A -> bool),
+    (forall a1 a2, beq a1 a2 = true <-> a1 = a2) ->
+    forall l2, beq_list beq [ ] l2 = true <-> [] = l2.
+Proof.
+  intros A beq H1.
+  intros l2.
+  destruct l2.
+  simpl.
+  split.
+  reflexivity.
+  reflexivity.
+  simpl.
+  split.
+  intros Ht1.
+  inversion Ht1.
+  intros Ht2.
+  inversion Ht2.
+Qed.
+
+Definition my_head {A : Type} (l : list A) (default: A) :=
+  match l with
+  | (t :: Rest) => t
+  | _ => default
+  end.
+
+Lemma head1_eq :
+  forall A (beq : A -> A -> bool) (D : A),
+    (forall a1 a2, beq a1 a2 = true <-> a1 = a2) ->
+    forall l1 l2 a b, beq_list2 beq (a::l1) (b::l2) = true ->
+        a = b.
+Proof.
+  intros A beq D H l1 l2 a b.
+  simpl.
+  unfold andb.
+  destruct (beq a b) eqn: HX1.
+  apply H in HX1.
+  intros H1.
+  apply HX1.
+  intros HC.
+  inversion HC.
+Qed.
+
+Lemma beq_list_true_iff :
+  forall A (beq : A -> A -> bool),
+    (forall a1 a2, beq a1 a2 = true <-> a1 = a2) ->
+    forall l1 l2, beq_list beq l1 l2 = true <-> l1 = l2.
+Proof.
+  intros A beq H1.
+  split.
+  generalize dependent l2.
+  induction l1.
+  simpl.
+  destruct l2.
+  reflexivity.
+  intros HC.
+  inversion HC.
+  simpl.
+  destruct l2.
+  intros HC.
+  inversion HC.
+  destruct (beq x a) eqn: Hbeq.
+  apply H1 in Hbeq.
+  simpl.
+  rewrite Hbeq.
+  assert (HR : l1 = l2 -> a :: l1 = a :: l2).
+  intro HEq.
+  rewrite HEq.
+  reflexivity.
+  intros Haa.
+  apply HR.
+  apply IHl1.
+  apply Haa.
+  simpl.
+  intros HC2.
+  inversion HC2.
+  intros HP.
+  rewrite HP.
+    apply list_beqlist_ref.
+    apply H1.
+Qed.
+
+Fixpoint forallb { X : Type } (test : X -> bool) (l : list X) : bool :=
+  match l with
+  | [] => true
+  | x :: l' => andb (test x) (forallb test l')
+  end.
+
+Theorem forallb_true_iff : forall X test (l : list X),
+    forallb test l = true <-> All (fun x => test x = true) l.
+Proof.
+  intros X test l.
+  split.
+  induction l.
+  simpl.
+  trivial.
+  simpl.
+  intro H.
+  split.
+  destruct (test x) eqn: HTst.
+  reflexivity.
+  simpl in H.
+  inversion H.
+  apply IHl.
+  destruct (forallb test l) eqn:  HC.
+  reflexivity.
+  destruct (test x) eqn: HC2.
+  simpl in H.
+  inversion H.
+  simpl in H.
+  inversion H.
+  induction l.
+  simpl.
+  reflexivity.
+  simpl.
+  intros [H1 H2].
+  rewrite H1.
+  simpl.
+  apply IHl.
+  apply H2.
+Qed.
+
+
+Definition excluded_middle := forall P : Prop,
+    P \/ ~P.
+
+
+Theorem not_exists_dist :
+  excluded_middle ->
+  forall ( X: Type) (P : X -> Prop),
+  ~(exists x, ~ P x) -> (forall x, P x).
+Proof.
+  unfold excluded_middle.
+
+  intros X.
+
+  intros H2.
+
+  intros H1.
+
+  intros HT1.
+  intros x.
+  assert (HN: H1 x \/ ~ (H1 x)).
+  apply X.
+  generalize dependent HN.
+  intros [HK1|HK2].
+  apply HK1.
+
+  assert (exists y : H2, ~ H1 y).
+  exists x.
+  apply HK2.
+
+  unfold not in HT1.
+  unfold not in H.
+  apply HT1 in H.
+  inversion H.  
+Qed.
+
+
+Definition peirce := forall P Q : Prop,
+                              ((P -> Q) -> P) -> P.
+
+Theorem equiv :
+  excluded_middle <-> peirce.
+Proof.
+   split.
+   unfold peirce.
+   unfold excluded_middle.
+   
+   intros Ex.
+   intros P Q.
+   intros HT.
+   assert (HK: P \/ ~P).
+   apply Ex.
+   generalize dependent HK.
+   intros [H1|H2].
+   apply H1.
+   apply H2 in HT.
+   inversion HT.
+   apply H2 in HT.
+   inversion HT.
+   apply H2 in HT.
+   inversion HT.
