@@ -1397,7 +1397,22 @@ Proof.
   inversion H.  
 Qed.
 
+(*
+Theorem implassoc : forall P Q V : Prop,
+    ((P -> Q) -> V) <-> (P -> (Q -> V)).
+Proof.
+  intros P Q V.
+  split.
+  intros H1.
+  intros P1 Q1.
+  apply H1.
+  intros H11.
+  apply Q1.
 
+  intros H1.
+  intros H11.
+  apply H1.
+*)
 Definition peirce := forall P Q : Prop,
                               ((P -> Q) -> P) -> P.
 
@@ -1416,9 +1431,24 @@ Proof.
    generalize dependent HK.
    intros [H1|H2].
    apply H1.
+   apply HT.
+   intros HK.    
    apply H2 in HT.
    inversion HT.
-   apply H2 in HT.
-   inversion HT.
-   apply H2 in HT.
-   inversion HT.
+   intros HN.
+   generalize dependent HT.
+   apply H2 in HN.
+   inversion HN.
+
+   unfold excluded_middle.
+   unfold peirce.
+
+   intros HT1.
+
+   intros P.
+   left.
+(*   assert (HK1 : forall Q : Prop, (( P -> Q) -> P) -> P).*)
+   apply HT1 with (Q := P).
+
+   intros H1.
+     
