@@ -420,3 +420,48 @@ Proof.
   reflexivity.
 Qed.
 
+Definition lt (n m:nat) := le (S n) m.
+
+Theorem plus_lt : forall n_1 n_2 m,
+    (lt (n_1 + n_2) m) ->
+    (lt n_1  m) /\ (lt n_2  m).
+Proof.
+  intros n_1 n_2 m.
+  intros H1.
+  split.
+  unfold lt.
+  unfold lt in H1.
+  replace (S (n_1 + n_2)) with ((S n_1) + n_2) in H1.
+  assert (HP:(le (S n_1) ((S n_1) + n_2))).
+  apply le_plus_l.
+  apply le_trans with (n:=(S n_1 + n_2)).
+  apply le_plus_l.
+  apply H1.
+
+  replace (S (n_1 + n_2)) with (1 + (n_1 + n_2) ).
+  rewrite plus_assoc.
+  simpl.
+  reflexivity.
+  
+  simpl.
+
+  reflexivity.
+  
+
+  (* Now the right side of the `and`  *)
+
+  unfold lt.
+  unfold lt in H1.
+  replace (S (n_1 + n_2)) with ( n_1 + (S n_2)) in H1.
+  assert (HP:(le (S n_2) (n_1 + (S n_2)))).
+  rewrite plus_comm.  
+  apply le_plus_l.
+  apply le_trans with (n:=( n_1 + S n_2)).
+  rewrite plus_comm.
+  apply le_plus_l.
+  apply H1.
+
+  replace (n_1 + S n_2) with (n_1 + (n_2 + 1)).
+  rewrite plus_assoc.
+  simpl.  
+Qed.  
