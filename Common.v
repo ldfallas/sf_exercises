@@ -231,6 +231,16 @@ Fixpoint map {X Y:Type} (f : X -> Y) (l:list X) : (list Y) :=
   | h :: t => (f h) :: (map f t)
   end.
 
+Fixpoint leb (n m : nat) : bool :=
+  match n with
+  | O => true
+  | S n' =>
+      match m with
+      | O => false
+      | S m' => leb n' m'
+      end
+  end.
+
 
 
 End Common.

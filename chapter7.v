@@ -461,7 +461,53 @@ Proof.
   apply le_plus_l.
   apply H1.
 
-  replace (n_1 + S n_2) with (n_1 + (n_2 + 1)).
+  replace  (S n_2) with (n_2 + 1).
+  
   rewrite plus_assoc.
-  simpl.  
+  rewrite plus_comm.
+  simpl.
+
+  reflexivity.
+  rewrite plus_comm.
+  simpl.
+  reflexivity.
 Qed.  
+
+Theorem lt_S : forall n m,
+    (lt n  m) ->
+    (lt n  (S m)).
+Proof.
+  intros n m.
+  unfold lt.
+  intros H.
+  induction H.
+  apply le_S.
+  apply le_n.
+  apply le_S.
+  apply IHle.
+Qed.
+
+
+(*
+
+ Theorem leb_trans : forall n m,
+      leb n m = true -> leb n (S m) = true.
+Proof.
+  intros  n m H.
+  induction  n.
+  reflexivity.    
+  simpl.  
+    
+Theorem leb_complete : forall m n,
+    leb n m = true -> (le n m). 
+Proof.
+  intros m n H.
+  induction n.
+  apply le_zero.
+  assert (H2: leb n m = true).
+  simpl in H.
+  destruct m.
+  inversion H.
+
+  simpl.
+  *)
