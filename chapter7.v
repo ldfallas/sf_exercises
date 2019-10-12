@@ -487,27 +487,128 @@ Proof.
   apply IHle.
 Qed.
 
+Theorem leb_reflex : forall n,
+    leb n n = true.
+Proof.
+  intros n.
+  induction n.
+  reflexivity.
+  simpl.
+  apply IHn.
+Qed.
 
-(*
+Theorem leb_ex1 : forall n m ,
+      leb n (n + m) = true.
+Proof.
+  intros n m.
+  induction n.
+  reflexivity.
+  simpl.
+  apply IHn.
+Qed.
 
- Theorem leb_trans : forall n m,
+
+Theorem leb_ex2 : forall n m ,
+      (exists m', m =  n + m') -> leb n m = true.
+Proof.
+  intros n m [m' Hm'].
+  rewrite Hm'.
+  apply leb_ex1.
+Qed.
+
+
+Theorem leb_ex3 : forall n m ,
+       leb n m = true -> (exists m', m =  n + m').
+Proof.
+
+  intros n m H.
+  generalize dependent m.
+  induction n.
+  intros m.
+  exists m.
+  reflexivity.
+  intros m H.
+  assert (Hmpred : exists mpred, m = S mpred).
+  simpl in H.
+  destruct m.
+  inversion H.
+  exists m.
+  reflexivity.
+  destruct Hmpred.
+  rewrite H0 in H.
+  simpl in H.
+  apply  IHn in H.
+  destruct H.
+  exists x0.
+  rewrite H0.
+  rewrite H.
+  simpl.
+  reflexivity.
+ Qed.
+
+
+Theorem leb_trans : forall n m ,
+      leb (S n) m = true -> leb  n m = true.
+Proof.
+  intros  n m  H.
+  rewrite leb_ex2.
+  reflexivity.
+  apply leb_ex3 in H.
+  destruct H.
+  rewrite H.
+  exists (1 + x).
+  replace (n + (1 + x)) with ((1 + n) + x).
+  simpl.
+  reflexivity.
+  rewrite plus_assoc.
+  replace (n + 1 + x) with (1 + n + x).
+  simpl.
+  reflexivity.
+  simpl.
+  replace (n + 1) with (1 + n).
+  simpl.
+  reflexivity.
+  apply plus_comm.
+Qed.
+  
+Theorem leb_trans2 : forall n m,
       leb n m = true -> leb n (S m) = true.
 Proof.
   intros  n m H.
-  induction  n.
-  reflexivity.    
-  simpl.  
-    
+  induction n.
+  reflexivity.
+  simpl.
+  apply leb_trans.
+  apply H.
+Qed.
+
+Theorem leb_false : forall n,
+    leb (S n) n = false.
+Proof.
+  intros n.
+  induction n.
+  reflexivity.
+  simpl.
+  simpl in IHn.
+  apply IHn.
+Qed.
+
+  
 Theorem leb_complete : forall m n,
     leb n m = true -> (le n m). 
 Proof.
   intros m n H.
   induction n.
-  apply le_zero.
-  assert (H2: leb n m = true).
-  simpl in H.
   destruct m.
+  apply le_n.
+  apply le_zero.
+  destruct IHn.
+  apply leb_trans.
+  apply H.
+  destruct n.
   inversion H.
-
-  simpl.
-  *)
+  rewrite leb_false in H.
+  inversion H.
+  apply n_le_m___Sn_le_Sm.
+  apply l.
+Qed.
