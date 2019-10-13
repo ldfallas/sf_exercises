@@ -612,3 +612,211 @@ Proof.
   apply n_le_m___Sn_le_Sm.
   apply l.
 Qed.
+
+
+Theorem leb_correct : forall m n,
+    (le n m)  ->  leb n m = true.
+Proof.
+  intros m n H.
+  generalize dependent n.
+  induction m.
+  destruct n.
+  reflexivity.
+  intros H.
+  inversion H.
+  intros n H.  
+  destruct n.
+  reflexivity.
+  simpl.
+  apply Sn_le_Sm__n_le_m in H.
+  apply  IHm in H.
+  apply H.
+Qed.
+
+Theorem leb_true_trans : forall n m o,
+    leb n m = true ->
+    leb m o = true ->
+    leb n o = true.
+Proof.
+  intros n m o H1 H2.
+  apply leb_complete in H1.
+  apply leb_complete in H2.
+  apply leb_correct.
+  apply le_trans with (n:=m).
+  apply H1.
+  apply H2.
+Qed.
+
+
+Theorem leb_iff : forall n m,
+    leb n m = true <-> le n m.
+Proof.
+  intros n m.
+  split.
+  apply leb_complete.
+  apply leb_correct.
+Qed.
+
+Inductive R : nat -> nat -> nat -> Prop :=
+| c_1 : R 0 0 0
+| c_2 : forall m n o, R m n o -> R (S m) n (S o)
+| c_3 : forall m n o, R m n o -> R m (S n) (S o)
+| c_4 : forall m n o, R (S m) (S n) (S (S o)) -> R m n o
+| c_5 : forall m n o, R m n o -> R n m o.
+
+
+Theorem p1 :
+  R 1 1 2.
+Proof.
+  apply c_2.
+  apply c_5.
+  apply c_2.
+  apply c_1.
+Qed.
+
+Lemma R_zero_n : forall n, R 0 n n.
+Proof.
+  intros n.
+  induction n.
+  apply c_1.
+  apply c_3.
+  apply IHn.
+Qed.
+
+
+Theorem plus_suc_suc : forall n m o, (n + S m = S o) -> (n + m = o).
+Proof.
+  intros n m o H.
+  rewrite plus_comm in H.
+  inversion H.
+  rewrite plus_comm.
+  reflexivity.
+Qed.
+
+
+Definition fR (n m : nat) : nat :=
+  n + m.
+
+Theorem R_equiv_fR : forall m n o, R m n o <-> fR m n = o.
+Proof.
+  intros m n o.
+  split.
+  intros H.
+  induction H.
+  simpl.
+  reflexivity.
+  simpl.
+  rewrite IHR.
+  reflexivity.
+  unfold fR.
+  unfold fR in IHR.
+  rewrite <- IHR.
+  replace (S n) with ( 1 + n).
+  rewrite plus_assoc.
+  replace (m + 1) with (1 + m).
+  simpl.
+  reflexivity.
+  apply plus_comm.
+  reflexivity.
+  unfold fR in IHR.
+  inversion IHR.
+  rewrite plus_comm in H1.
+  inversion H1.
+  unfold fR.
+  apply plus_comm.
+  unfold fR.
+  unfold fR in IHR.
+  rewrite plus_comm.
+  apply IHR.
+
+  
+  intros H.
+  unfold fR in H.
+
+  generalize dependent n.
+  generalize dependent o.
+  
+  induction m.  
+  simpl.
+  intros o m H.
+
+  
+  rewrite <- H.
+  apply R_zero_n.
+  intros o n H.
+  replace (S m + n) with (S (m + n)) in H.
+  rewrite <- H.
+  apply c_2.
+  apply IHm.
+  reflexivity.
+  simpl.
+  reflexivity.
+Qed.
+
+
+Inductive subseq : list nat -> list nat -> Prop :=
+| ss_empty : subseq [] []
+| ss_match : forall e_1 l_1 l_2,
+             (subseq l_1 l_2) -> (subseq (e_1::l_1)
+                                         (e_1::l_2))
+| ss_nomatch : forall l_1 l_2 e,
+             (subseq l_1 l_2) -> (subseq (l_1)
+                                         (e::l_2)).
+
+
+Lemma subseq_test :
+  subseq [1;2;3] [1;1;1;2;2;3].
+Proof.
+  apply ss_match.
+  apply ss_nomatch.
+  apply ss_nomatch.
+  apply ss_match.
+  apply ss_nomatch.
+  apply ss_match.
+  apply ss_empty.
+Qed.
+
+
+Theorem subseq_refl : forall l_1, subseq l_1 l_1.
+Proof.
+  intros l_1.
+  induction l_1.
+  apply ss_empty.
+  apply ss_match.
+  apply IHl_1.
+Qed.
+
+Theorem app_empty : forall X: Type,forall l_1 : list X, ( l_1 ++ [] = l_1).
+Proof.
+  intros X l_1.
+  induction l_1.
+  simpl.
+  reflexivity.
+  simpl.
+rewrite -> IHl_1.
+
+reflexivity.
+Qed.
+
+Theorem subsql_empty : forall l : list nat,
+      subseq [] l.
+Proof.
+  intros l.
+  induction l.  
+  apply ss_empty.
+  apply ss_nomatch.
+  apply IHl.
+Qed.
+
+Theorem subsql_app : forall l_1 l_2 l_3,
+    subseq l_1 l_2 -> subseq l_1 (l_2 ++ l_3).
+Proof.
+  intros l_1 l_2 l_3 H.
+  induction H.
+  apply subsql_empty.
+  apply ss_match.
+  apply IHsubseq.
+  apply ss_nomatch.
+  apply IHsubseq.
+Qed.  
+
