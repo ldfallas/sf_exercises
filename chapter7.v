@@ -818,5 +818,392 @@ Proof.
   apply IHsubseq.
   apply ss_nomatch.
   apply IHsubseq.
-Qed.  
+Qed.
 
+Theorem subsql_app2 : forall l_1 l_2 l_3,
+    subseq l_1 l_2 -> subseq l_1 (l_3 ++ l_2).
+Proof.
+  intros l_1 l_2 l_3 H.
+  induction l_3.
+  simpl.
+  apply H.
+  apply ss_nomatch.
+  apply IHl_3.
+Qed.
+
+
+Theorem subsql_splits : forall e : nat, forall l_1 l_2 l_3 l_4 : list nat,
+    subseq (e::l_1) l_2 -> exists l_3 l_4, (l_2 = (l_3 ++ (e::l_4))).
+Proof.
+  intros e l_1 l_2 l_3 l_4 H.
+  induction l_2.
+  inversion H.
+  inversion H.
+  exists [].
+  exists l_2.
+  reflexivity.
+  apply IHl_2 in H2.
+  destruct H2.
+  destruct H2.
+  rewrite  H2.
+  exists (x :: x0).
+  exists x1.
+  reflexivity.
+Qed.
+
+Theorem subsql_splits_extra : forall e : nat, forall l_1 l_2 l_3 l_4 : list nat,
+    subseq (e::l_1) l_2 -> exists l_3 l_4, ((l_2 = (l_3 ++ (e::l_4))) /\ subseq l_1 l_4).
+Proof.
+  intros e l_1 l_2 l_3 l_4 H.
+  
+  induction l_2.
+  inversion H.
+  inversion H.
+  exists [].
+  exists l_2.
+  split.
+  reflexivity.
+  apply H1.
+  apply IHl_2 in H2.
+  destruct H2.
+  destruct H2.
+  destruct H2.
+  rewrite  H2.
+  
+  exists (x :: x0).
+  exists x1.
+  split.
+  reflexivity.
+  apply H4.
+Qed.
+
+Theorem subsql_splits_extra_anti : forall e : nat, forall l_1 l_2  : list nat,
+    (exists l_3 l_4, (l_2 = (l_3 ++ (e::l_4))) /\ subseq l_1 l_4) ->
+                      subseq (e::l_1) l_2.
+Proof.
+  intros e l_1 l_2  H.
+  destruct H.
+  destruct H.
+  destruct H.
+  rewrite H.  
+  apply subsql_app2.
+  apply ss_match.
+  apply H0.
+Qed.
+
+Theorem sub_first_element : forall e : nat, forall l_1 l_2 : list nat,
+    subseq (e::l_1) l_2 -> subseq l_1 l_2.
+Proof.
+  intros e l_1 l_2  H.
+  apply subsql_splits_extra in H.
+  destruct H.
+  destruct H.
+  destruct H.
+  rewrite H.
+  replace (x ++ e :: x0) with ( (x ++ [e]) ++ x0).
+  apply subsql_app2 .
+  apply H0.
+  rewrite <- app_assoc.
+  simpl.
+  reflexivity.
+  apply l_1.
+  apply l_2.
+Qed.
+
+
+Lemma subseq_new_head  : forall e  : nat, forall l_1 l_2 : list nat,
+      subseq l_1 l_2 -> subseq  l_1 (e::l_2).
+Proof.
+  intros e l_1 l_2 H.
+  apply ss_nomatch.
+  apply H.  
+Qed.
+
+
+
+Lemma subseq_singleHead  : forall e  : nat, forall l_1 l_2 : list nat,
+       subseq   (e::l_1) l_2 -> subseq [e] l_2.
+Proof.
+  intros e l_1 l_2 H.
+  apply subsql_splits_extra in H.
+  destruct H.
+  destruct H.
+  destruct H.
+  apply subsql_splits_extra_anti.
+  exists x.
+  exists x0.
+  split.
+  apply H.
+  apply subsql_empty.
+  apply l_1.
+    apply l_1.
+Qed.
+
+
+  
+(* (e::
+Lemma subseq_inner_tmp  : forall e t  : nat, forall l_1 l_2  : list nat,
+      subseq (e :: l_1) (t :: l_2) /\ ~(e = t) ->
+      subseq (e::l_1) l_2.
+Proof.
+  intros e t l_1 l_2 [H1 H2].
+  inversion H1.  
+  unfold not in H2.
+  apply H2 in H4.
+  inversion H4.
+  apply H3.  
+Qed.
+
+
+
+
+************************************
+The following theorems seem to make sense,
+however I was not able to prove them with what we have.
+
+Is it because of my lack of knowledge o because my own defintion
+of `subseq` doesn't allow to produce the expressions to be proven???
+
+
+************************************
+
+Lemma subseq_inner  : forall e  : nat, forall l_1 l_2  : list nat,
+      subseq (e :: l_1) l_2 -> exists l_3 l_4, l_2 = l_3 ++ (e::l_4).
+Proof.
+  intros  e l_1 l_2 H.
+  inversion H as [| c1' C1' C2'|].
+  exists [].
+  exists C2'.
+  reflexivity.
+  
+Qed.
+
+
+Lemma subseq_no_head_tmp2  : forall e  : nat, forall l_1 l_2 : list nat,
+      subseq (e :: l_1) l_2 -> subseq [e] l_2.
+Proof.
+  intros e l_1 l_2 H.
+  induction l_1.
+  apply H.
+  apply IHl_1.
+  inversion H.
+
+  rewrite <- H1 in H.
+  inversion H3.
+  apply ss_match.
+  apply ss_nomatch.
+  apply H7.
+  
+
+Lemma subseq_no_head_tmp  : forall e  : nat, forall l_1 l_2 : list nat,
+      subseq (e :: l_1) (e::l_2) -> subseq l_1 l_2.
+Proof.
+  intros e l_1 l_2 H.
+  destruct l_2.
+  inversion H.
+  inversion H1.
+  inversion H1.
+  apply ss_empty.
+  inversion H2.
+
+  
+ *)
+    
+  
+Lemma  inner_splits :
+  forall x : nat, forall l_1 l_2 l_1_1 l_1_2: list nat,
+      subseq (l_1_1 ++ x :: l_1_2) l_2 -> exists l_2_1 l_2_2, l_2 = l_2_1 ++ x :: l_2_2 /\ subseq l_1_2 l_2_2.
+Proof.
+  intros x l_1 l_2 l_1_1 l_1_2 H.
+  induction l_1_1.    
+  simpl in H.
+  apply subsql_splits_extra in H.
+  destruct H.
+  destruct H.
+  destruct H.
+  exists x0.
+  exists x1.
+  split.
+  apply H.
+  apply H0.
+  apply l_1.
+  apply l_1.
+
+  (**)
+  apply IHl_1_1.
+  simpl in H.  
+  apply sub_first_element in H.
+  apply H.
+Qed.
+
+(*
+Lemma  subsq_append :
+  forall x : nat, forall l_1 l_2 : list nat,
+      subseq (l_1 ++ [x]) (l_2 ++ [x]) -> subseq l_1 l_2.
+Proof.
+  intros x l_1 l_2 H.
+  inversion H.
+  destruct l_1.
+  simpl in H1.
+  inversion H1.
+  inversion H1.
+  
+  apply subsql_splits_extra in H.
+  destruct H.
+  destruct H.
+  destruct H.
+  rewrite H.
+  
+Lemma  inner_splits_expanded :
+  forall x : nat, forall l_1 l_2 l_1_1 l_1_2: list nat,
+      subseq (l_1_1 ++ x :: l_1_2) l_2 ->
+          exists l_2_1 l_2_2, l_2 = l_2_1 ++ x :: l_2_2 /\ subseq l_1_1 l_2_1 /\ subseq l_1_2 l_2_2.
+Proof.
+  intros x l_1 l_2 l_1_1 l_1_2 H.
+
+  assert (HX2: exists l_2_1 l_2_2, l_2 = l_2_1 ++ x :: l_2_2 /\ subseq l_1_2 l_2_2).
+  apply inner_splits with (l_1_1 := l_1_1).
+  apply l_1.
+  apply H.
+  destruct HX2.
+  destruct H0.
+  destruct H0.
+  exists x0.
+  exists x1.
+  split.
+  apply H0.
+  split .
+  induction l_1_1.
+  apply subsql_empty.  
+  rewrite H0 in H.
+  induction x1.
+  inversion H1.
+  rewrite <- H2 in H.
+
+
+  
+  induction l_1_1.
+  simpl in H.
+  apply subsql_splits_extra in H.
+  destruct H.
+  destruct H.
+  destruct H.
+  exists x0.
+  exists x1.
+  split.
+  apply H.
+  split.
+  apply subsql_empty.
+  apply H0.
+  apply l_1.
+  apply l_1.
+  simpl in H.
+
+  assert (HX1 : subseq (l_1_1 ++ x :: l_1_2) l_2).
+  apply sub_first_element in H.
+  apply H.
+  apply IHl_1_1 in HX1.
+  destruct HX1.
+  destruct H0.
+  destruct H0.
+  destruct H1.
+  exists x1.
+  exists x2.
+  split.
+  apply H0.
+  split.
+  rewrite H0 in H.
+
+  
+  
+
+  inversion H.
+
+  
+  apply  IHl_1_1 in H.
+  destruct H.
+  destruct H.
+  destruct H.
+
+
+  destruct H0.
+  exists x1.
+  exists x2.
+  split.
+  apply H.
+  split.
+    
+Lemma subseq_single_split  : forall e  : nat, forall  l_2 l_1_1 l_1_2 : list nat,
+       subseq   (l_1_1 ++ e::l_1_2) l_2 -> subseq [e] l_2.
+Proof.
+  intros e l_2 l_1_1 l_1_2 H.
+  apply subsql_splits_extra_anti.
+  apply inner_splits in H.
+  destruct H.
+  destruct H.
+  destruct H.
+  exists x.
+  exists x0.
+  split.  
+  apply H.
+  apply subsql_empty.
+  apply l_2.
+Qed.
+
+
+Lemma  inner_splits_expanded :
+  forall x : nat, forall l_1 l_2 l_1_1 l_1_2: list nat,
+      subseq (l_1_1 ++ x :: l_1_2) l_2 ->
+          exists l_2_1 l_2_2, l_2 = l_2_1 ++ x :: l_2_2 /\ subseq l_1_1 l_2_1 /\ subseq l_1_2 l_2_2.
+Proof.
+  induction l_2.
+  intros l_1_1 l_1_2 H.
+  destruct l_1_1.
+  simpl in H.
+  inversion H.
+  inversion H.
+  
+  intros x l_1 l_2 l_1_1 l_1_2 H.
+  
+  
+
+Theorem subseq_trans :
+  forall l_1 l_2 l_3 : list nat,
+    subseq l_1 l_2 ->
+    subseq l_2 l_3 ->
+    subseq l_1 l_3.
+Proof.
+
+
+
+
+
+
+  
+  induction l_1.
+
+  intros l_2 l_3 H1 H2.
+  
+  apply subsql_empty.
+  intros l_2 l_3 H1 H2.
+
+  assert (HX: subseq l_1 l_2).
+  apply sub_first_element in H1.
+  apply H1.
+  apply subsql_splits_extra in H1.
+
+  apply  IHl_1 in HX.
+  
+  apply subsql_splits_extra in H1.
+
+  destruct H1.
+  destruct H.
+  destruct H.
+
+  rewrite H in H2.
+  apply inner_splits in H2.
+  destruct H2.
+  destruct H1.
+  destruct H1.
+
+    *)
