@@ -242,6 +242,14 @@ Fixpoint leb (n m : nat) : bool :=
   end.
 
 
+Fixpoint fold {X Y : Type} (f : X -> Y -> Y) (l: list X) (b:Y)
+  : Y :=
+  match l with
+  | [] => b
+  | h :: t => f h (fold f t b)
+  end.
+
+
 
 End Common.
   

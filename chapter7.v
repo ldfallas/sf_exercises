@@ -1151,59 +1151,436 @@ Proof.
 Qed.
 
 
+Lemma  inner_splits_expanded_parts :
+    forall l_1 l_2 l_1_1 l_1_2: list nat,
+      subseq (l_1_1 ++ l_1_2) l_2 ->
+          exists l_2_1 l_2_2, l_2 = l_2_1 ++  l_2_2 /\ subseq l_1_1 l_2_1 /\ subseq l_1_2 l_2_2.
+Proof.
+  induction l_1_1.
+  simpl.
+  intros l_1_2.
+  intros H1.
+  exists [].
+  exists l_2.
+  simpl.
+  split.
+  reflexivity.
+  split.
+  apply ss_empty.
+  apply H1.
+  intros l_1_2 H1.
+  
+  simpl in H1.
+  apply subsql_splits_extra in H1.
+  destruct H1.
+  destruct H.
+  destruct H.
+  exists  x0.
+  exists (x::x1).
+  split.
+  apply H.
+  split.
+
+
 Lemma  inner_splits_expanded :
   forall x : nat, forall l_1 l_2 l_1_1 l_1_2: list nat,
       subseq (l_1_1 ++ x :: l_1_2) l_2 ->
           exists l_2_1 l_2_2, l_2 = l_2_1 ++ x :: l_2_2 /\ subseq l_1_1 l_2_1 /\ subseq l_1_2 l_2_2.
 Proof.
-  induction l_2.
-  intros l_1_1 l_1_2 H.
-  destruct l_1_1.
-  simpl in H.
-  inversion H.
-  inversion H.
+   
+  *)
   
-  intros x l_1 l_2 l_1_1 l_1_2 H.
-  
-  
+Theorem subseq_trans_single' :
+  forall x  : nat,forall  l_2 l_3 : list nat,
+    subseq [x] l_2 ->
+    subseq l_2 l_3 ->
+    subseq [x] l_3.
+Proof.
+  intros  x l_2 l_3 H1 H2.
+  apply subsql_splits_extra in H1.
+  destruct H1.
+  destruct H.
+  destruct H.
+  rewrite H in H2.
+  apply inner_splits in H2.
+  destruct H2.
+  destruct H1.
+  destruct H1.
+  rewrite H1.
+  induction x2.
+  simpl.
+  apply ss_match.
+  apply subsql_empty.
+  apply subsql_splits_extra_anti.
+  exists (x2 :: x4).
+  exists x3.
+  split.
+  reflexivity.
+  apply subsql_empty.
+  apply l_2.
+  apply l_2.
+  apply l_2.
+Qed.
 
+
+Theorem subseq_trans_facts :
+  forall x : nat,forall l_1 l_2  : list nat,
+    subseq (l_1) (x::l_2) ->
+    ((exists y l_3, l_1 = (y::l_3) /\ (y = x) /\ subseq l_3 l_2)
+     \/ (subseq l_1 l_2)).
+Proof.
+  intros x l_1 l_2 H1.
+  inversion H1.
+  left.
+  
+  exists x.
+  exists l_0.
+  split.
+  reflexivity.
+  split.
+  reflexivity.
+  apply H2.
+  right.
+
+  apply H2.
+Qed.  
+
+
+Theorem subseq_trans_facts_rev :
+  forall x : nat,forall l_1 l_2  : list nat,
+    ((exists y l_3, l_1 = (y::l_3) /\ (y = x) /\ subseq l_3 l_2)
+     \/ (subseq l_1 l_2)) -> subseq (l_1) (x::l_2).
+Proof.
+  intros x l_1 l_2 H1.
+  destruct H1.
+  destruct H.
+  destruct H.
+  destruct H.
+  destruct H0.
+  rewrite <- H0 .
+  rewrite H .
+  apply ss_match.
+  apply H1.
+  apply ss_nomatch.
+
+  apply H.
+
+Qed.  
+
+
+(*
+Theorem subseq_trans' :
+  forall x y : nat,forall l_1 l_2 l_3 : list nat,
+    subseq (x::l_1) (y::l_2) ->
+    subseq l_2 l_3 ->
+    subseq (x::l_1) (y::l_3).
+Proof.
+  induction l_3.
+  intros H1 H2.
+  inversion H1.
+  apply ss_match.
+  inversion H2.
+  rewrite <- H6 in H0.
+  apply H0.
+  inversion H2.
+  rewrite <- H5 in H1.
+  apply H1.
+  intros H1 H2.
+*)
+
+(* 
+SO SAD TO GIVE UP IN THE FOLLOWING 
+Still i'm not able to find a proof for this theorem
+*)
+
+(*
 Theorem subseq_trans :
   forall l_1 l_2 l_3 : list nat,
     subseq l_1 l_2 ->
     subseq l_2 l_3 ->
     subseq l_1 l_3.
 Proof.
-
-
-
-
-
-
-  
-  induction l_1.
-
-  intros l_2 l_3 H1 H2.
-  
-  apply subsql_empty.
-  intros l_2 l_3 H1 H2.
-
-  assert (HX: subseq l_1 l_2).
-  apply sub_first_element in H1.
+  intros l_1 l_2 l_3 H1 H2.
+  induction H2.
   apply H1.
-  apply subsql_splits_extra in H1.
 
-  apply  IHl_1 in HX.
+    apply subseq_trans_facts_rev.
+
+
   
-  apply subsql_splits_extra in H1.
-
+  apply subseq_trans_facts in H1.
   destruct H1.
   destruct H.
   destruct H.
+  destruct H.
+  destruct H0.
+  rewrite <- H0.
+  apply subseq_trans_facts_rev.
 
-  rewrite H in H2.
-  apply inner_splits in H2.
-  destruct H2.
-  destruct H1.
-  destruct H1.
+  left.
+  exists x.
+  exists  x0.
+  
+  right.
 
-    *)
+ *)
+
+
+(*******************)
+
+Inductive R_2 : nat -> list nat -> Prop :=
+| cc_1 : R_2 0 []
+| cc_2 : forall n l , R_2 n l -> R_2 (S n) (n :: l)
+| cc_3 : forall n l, R_2 (S n) l -> R_2 n l.
+
+Theorem R_Check1 : R_2 2 [1;0].
+Proof.
+  apply cc_2.
+  apply cc_2.
+  apply cc_1.
+Qed.
+
+Theorem R_Check2 : R_2 1 [1;2;1;0].
+Proof.
+  apply cc_3.
+  apply cc_2.
+  apply cc_3.
+  apply cc_3.
+  apply cc_2.
+  apply cc_2.
+  apply cc_2.
+  apply cc_1.
+Qed.
+
+(*
+It seems that the following could not be proved
+
+Theorem R_Check3 : R_2 6 [3;2;1;0].
+Proof.
+
+Qed.
+ *)
+
+(*
+This inductive type it's kind of an AST for regular expressions
+*)
+Inductive reg_exp (T : Type) : Type :=
+| EmptySet : reg_exp T
+| EmptyStr : reg_exp T
+| Char : T -> reg_exp T
+| App : reg_exp T -> reg_exp T -> reg_exp T
+| Union : reg_exp T -> reg_exp T -> reg_exp T
+| Star : reg_exp T -> reg_exp T.
+
+Arguments EmptySet {T}.
+Arguments EmptyStr {T}.
+Arguments Char {T} _.
+Arguments App {T} _ _ .
+Arguments Union {T}  _ _.
+Arguments Star {T} _.
+
+(*
+New we can define the inductive relation between our regexp AST
+and common strings
+*)
+
+Inductive exp_match {T} : list T -> reg_exp T -> Prop :=
+| MEmpty : exp_match [] EmptyStr
+| MChar : forall x, exp_match [x] (Char x)
+| MApp : forall s_1 re_1 s_2 re_2,
+    exp_match s_1 re_1 ->
+    exp_match s_2 re_2 ->
+    exp_match (s_1 ++ s_2) (App re_1 re_2)
+| MUnionL : forall s_1 re_1 re_2,
+    exp_match s_1 re_1 ->
+    exp_match s_1 (Union re_1 re_2)
+| MUnionR : forall re_1 s_2 re_2,
+    exp_match s_2 re_2 ->
+    exp_match s_2 (Union re_1 re_2)
+| MStar0 : forall re, exp_match [] (Star re)
+| MStarApp : forall s_1 s_2 re,
+    exp_match s_1 re ->
+    exp_match s_2 (Star re) ->
+    exp_match (s_1 ++ s_2) (Star re).
+
+Notation "s =~ re" := (exp_match s re) (at level 80).
+
+Example reg_exp_ex_1 : [1] =~ Char 1.
+Proof.
+  apply MChar.
+Qed.
+
+Example reg_exp_ex_2 : [1; 2] =~ App (Char 1) (Char 2).
+Proof.
+  apply (MApp [1] _ [2]).
+  apply MChar.
+  apply MChar.
+Qed.
+
+Example reg_exp_ex_3 : ~([1; 2] =~ Char 1).
+Proof.
+  intros H.
+  inversion H.
+Qed.
+
+Fixpoint reg_exp_of_list {T} (l : list T) :=
+  match l with
+  | [] => EmptyStr
+  | x :: l' => App (Char x) (reg_exp_of_list l')
+  end.
+
+Example reg_exp_ex_4 : [1;2;3] =~ reg_exp_of_list [1; 2; 3].
+Proof.
+  simpl.
+  apply (MApp [1]).
+  apply MChar.
+  apply MApp with (s_1 := [2]).
+(*  apply (MApp [2]).*)
+  apply MChar.
+  apply (MApp [3]).
+  apply MChar.
+  apply MEmpty.
+Qed.
+
+Lemma MStar1 :
+  forall T s (re : reg_exp T) ,
+    s =~ re ->
+    s =~ Star re.
+Proof.
+  intros T s re H.
+  apply MStarApp with (s_2 := []) in H .
+  rewrite app_empty in H.
+  apply H.
+  apply MStar0.
+Qed.
+
+Lemma empty_is_empty : forall T (s : list T),
+    ~ (s =~ EmptySet).
+Proof.
+  intros T s.
+  unfold not.
+  intros H.
+  inversion H.
+Qed.
+
+
+Lemma MUnion' : forall T ( s : list T) (re_1 re_2 : reg_exp T),
+    s =~ re_1 \/ s =~ re_2 ->
+    s =~ Union re_1 re_2.
+Proof.
+  intros T s re_1 re_2 [H1 | H2].
+  apply MUnionL .
+  apply H1.
+  apply MUnionR .
+  apply H2.
+Qed.
+
+
+Fixpoint In {A : Type} (x : A) (l : list A) : Prop :=
+  match l with
+  | [] => False
+  | x' :: l' => x' = x \/ In x l'
+  end.
+
+Lemma MStar' : forall T (ss : list (list T)) (re : reg_exp T),
+    (forall s, In s ss -> s =~re) ->
+    fold app ss [] =~ Star re.
+Proof.
+  intros T ss re H1.
+  induction ss.
+  simpl.
+  apply MStar0.
+  simpl.
+  apply MStarApp.
+  apply H1.
+  simpl.
+  left.
+  reflexivity.
+  apply IHss.
+  intros s H2.
+  apply H1.
+  simpl.
+  right.
+  apply H2.
+Qed.
+
+Lemma empty_lists : forall T (l_1 l_2 : list T),
+    (l_1 ++ l_2 = []) -> l_1 = [] /\ l_2 = [].
+Proof.
+  intros T l_1 l_2 H.
+  split.
+  destruct l_1.
+  reflexivity.
+  simpl in H.
+  destruct l_2.
+  simpl in H.
+  inversion H.
+  simpl in H.
+  inversion H.
+  destruct l_1.
+  destruct l_2.
+  reflexivity.
+  inversion H.
+  inversion H.
+
+Qed.
+
+Lemma empty_concat : forall T (l1 l2 : list T),
+    l1 ++ l2 = [] -> l1 = [] /\ l2 = [].
+Proof.
+  intros T l1 l2  .
+  destruct l1.
+  destruct l2.
+  simpl.
+  intros H.
+  split.
+  reflexivity.
+  reflexivity.
+  simpl.
+  intros H.
+  inversion H.
+  simpl.
+  intros H.
+  inversion H.
+
+Qed.
+
+Lemma reg_exp_of_list_spec : forall T (s_1 s_2 : list T),
+    s_1 =~ reg_exp_of_list s_2 <-> s_1 = s_2.
+Proof.
+  split.
+  generalize dependent s_1.
+
+  induction s_2.
+  intros s_1 H.
+  simpl in H.
+  inversion H.
+  reflexivity.
+  intros s_1 H.
+  simpl in H.
+  inversion H.
+  apply  IHs_2 in H4 .
+  rewrite H4.
+  inversion H3.
+  reflexivity.
+
+  generalize dependent s_2.
+
+  induction s_1.
+    intros s_2 H.
+  rewrite <- H.
+  simpl.
+  apply MEmpty.
+  intros s_2 H.
+  rewrite <- H.
+  simpl.
+  replace (x :: s_1) with ([x] ++ s_1).
+  apply MApp.
+  apply MChar.
+  apply IHs_1.
+  reflexivity.
+  
+  destruct s_1.
+  reflexivity.
+  reflexivity.
+Qed.
